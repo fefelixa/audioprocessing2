@@ -25,7 +25,7 @@ names = [name.strip().lower() for name in name_file.readlines()]
 # --------- Load & organize features ----------
 data = []
 labels = []
-npy_files = sorted(glob.glob("data/features/features_clean/*/*.npy"))
+npy_files = sorted(glob.glob("data/features/audio/*.npy"))
 
 # Unify the time dimension (number of frames)
 MAX_FRAMES = max([np.load(npy).shape[1] for npy in npy_files])
@@ -35,7 +35,7 @@ for mfcc_file in npy_files:
     mfcc_data = np.pad(mfcc_data, ((0, 0), (0, MAX_FRAMES - mfcc_data.shape[1])))
     data.append(mfcc_data)
     # Get label from parent directory name to avoid filename parsing issues
-    label = Path(mfcc_file).parent.name.lower()
+    label = Path(mfcc_file).stem[:-3]
     # print(label)
     labels.append(label)
 
@@ -71,7 +71,7 @@ def create_model():
     model.add(Conv2D(32, (3, 3), activation='relu')) #64 try 32
     model.add(MaxPooling2D(pool_size=(3, 3)))
     model.add(Flatten())
-    model.add(Dense(256))  # originally 256   512 is overfiiting
+    model.add(Dense(256))  # originally 512, was overfitting
     model.add(Activation('relu'))
     model.add(Dense(num_classes))
     model.add(Activation('softmax'))
@@ -80,12 +80,12 @@ def create_model():
 model = create_model()
 
 # --------- Train / Load weights ----------
-training = False
+training = True
 if training:
     model.compile(loss='categorical_crossentropy', optimizer=Adam(learning_rate=0.005), metrics=['accuracy'])  #original 0.01
     model.summary()
 
-    EPOCHS = 20 # original 25 try 10
+    EPOCHS = 15 # original 25 try 10
     BATCH_SIZE = 16
     history = model.fit(
         X_train, y_train,
@@ -135,12 +135,14 @@ print("Example prediction:", predicted_class)
 
 # Confusion matrix (after evaluation)
 confusion_matrix = metrics.confusion_matrix(actual, predicted, labels=range(len(names)))
+confusion_matrix = confusion_matrix * 100/np.max(confusion_matrix)
 cm_display = ConfusionMatrixDisplay(confusion_matrix, display_labels=names)
-cm_display.plot(include_values=True, xticks_rotation=45)
+cm_display.plot(include_values=True, xticks_rotation=90)
 plt.tight_layout()
 plt.savefig("confusion_matrix.png", dpi=200)
 plt.close()
 
+'''
 # Quick single-audio test
 wav_path = 'data/test/test.wav'
 mfcc = features.wav_to_mfcc(wav_path)
@@ -154,3 +156,4 @@ else:
 mfcc = mfcc[np.newaxis, ..., np.newaxis]
 p = model.predict(mfcc, verbose=0)
 print("prediction: ", names[p.argmax()])
+'''
