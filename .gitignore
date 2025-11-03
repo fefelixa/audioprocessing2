@@ -219,3 +219,5 @@ __marimo__/
 .vscode/
 .idea/
 .DS_STORE
+*.npy
+*.weights.h5
