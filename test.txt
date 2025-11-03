@@ -1,0 +1,4 @@
+Dense(256) 
+Conv2D(32, (3, 3) 
+EPOCHS = 10
+learning_rate=0.001
