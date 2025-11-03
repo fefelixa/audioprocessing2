@@ -1,0 +1,8 @@
+2d convolution filters: 64
+dense layer dimensions: 512
+learning rate: 0.01
+epochs: 25
+batch size: 16
+
+
+accuracy 48%
