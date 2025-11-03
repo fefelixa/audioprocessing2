@@ -4,9 +4,10 @@ import soundfile as sf
 from pathlib import Path
 
 
-AUDIO_ROOT = Path("data/samples")
+AUDIO_ROOT = Path("data/audio")
 FEAT_ROOT  = Path("data/features")
-
+filename = 'ahmed001.npy'
+name = filename[:-7]
 
 def spectral_subtraction(S, noise_frames=6, alpha=1.5, beta=0.01):
     """
@@ -148,7 +149,7 @@ def main(audio_root: Path, sr: int = 16000, denoise=False, alpha=1.5, beta=0.01,
             print(f"[{i}/{len(wavs)}] {wav_path.name}")
 
 if __name__ == "__main__":
-    DENOISE = True  # Whether to enable spectral subtraction
+    DENOISE = False  # Whether to enable spectral subtraction
     ALPHA = 2.0  # Over-subtraction factor: 1.5, 2.0
     BETA = 0.05  # Spectral floor factor: 0.01, 0.05
     NOISE_FRAMES = 6  # Number of frames for noise estimation
