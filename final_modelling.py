@@ -85,7 +85,7 @@ def create_model():
 model = create_model()
 
 
-TEST_NUM = 1
+TEST_NUM = 4
 try:
     graph_dir = f"graphs/test{TEST_NUM}/"
     os.mkdir(graph_dir)
@@ -103,7 +103,7 @@ if training:
     model.compile(loss='categorical_crossentropy', optimizer=Adam(learning_rate=0.01), metrics=['accuracy'])  #original 0.01
     model.summary()
 
-    EPOCHS = 25 # original 25 try 10
+    EPOCHS = 15 # original 25 try 10
     BATCH_SIZE = 16
     history = model.fit(
         X_train, y_train,
@@ -156,9 +156,10 @@ print("predicted:", predicted_class)
 actual_label = test_labels[0]
 actual_class = LE.inverse_transform([np.argmax(actual_label)])
 print('actual:', actual_class)
+
 # Confusion matrix (after evaluation)
 confusion_matrix = metrics.confusion_matrix(actual, predicted, labels=range(len(names)))
-confusion_matrix = confusion_matrix /np.max(confusion_matrix)
+# confusion_matrix = confusion_matrix /np.max(confusion_matrix)
 cm_display = ConfusionMatrixDisplay(confusion_matrix, display_labels=names)
 cm_display.plot(include_values=True, xticks_rotation=90)
 plt.tight_layout()
