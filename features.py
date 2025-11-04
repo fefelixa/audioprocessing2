@@ -6,8 +6,6 @@ from pathlib import Path
 
 AUDIO_ROOT = Path("test/audio")
 FEAT_ROOT  = Path("test/features")
-filename = 'ahmed001.npy'
-name = filename[:-7]
 
 def spectral_subtraction(S, noise_frames=6, alpha=1.5, beta=0.01):
     """
