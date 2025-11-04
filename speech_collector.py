@@ -3,16 +3,15 @@ from random import randint
 
 import sounddevice as sd
 import soundfile as sf
-DIR = 'data/audio/'
+DIR = 'test/'
 name_file = open("NAMES.txt")
 names = [name.strip() for name in name_file.readlines()]
 names_dict = dict.fromkeys(names, 0)
 name_file.close()
-names_dict = dict()
 for n in names:
     names_dict[n] = 0
 
-TARGET = 25
+TARGET = 5
 
 # count existing recordings
 for filename in os.listdir(DIR):

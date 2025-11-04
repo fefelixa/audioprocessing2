@@ -1,0 +1,7 @@
+conv 2d filters: 32
+dense dims: 256
+learning rate: 0.01
+epochs: 25
+batch size: 8
+
+accuracy 58%

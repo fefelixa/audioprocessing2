@@ -5,4 +5,4 @@ epochs: 25
 batch size: 16
 
 
-accuracy 48%
+accuracy 26%
