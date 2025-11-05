@@ -1,0 +1,79 @@
+2d convolution filters: 64
+dense layer dimensions: 512
+learning rate: 0.01 (1/100th)
+epochs: 20
+batch size: 16
+val/train ratio : 20%
+
+1: control
+accuracy 22%, 27%,26%
+
+
+2: 32 2d conv
+accuracy 18%, 27%, 25%, 17%
+
+3: 128 2d conv
+23%
+very slow (3 minutes +)
+
+4: 256 dense ✅
+26%, 28%, 25%, 22%
+gets accurate quicker (?)
+
+5: 1024 dense
+22%
+very slow again
+
+6: lower learning rate 0.005, .0004, 0.001 (1/200 - 1000th)
+31%, 26%, 25%
+
+7:  learning rate 0.05
+25%, 14%, 18%
+
+8: epochs 50
+24%
+
+9: epochs 10
+24%, 20%, 24%
+
+ideal 15-20 epochs
+
+10: batch size 32
+23%, 23%, 25%
+
+11: batch size 4
+28%, 32%
+loss increases drastically
+
+lower batch size is a little more accurate but slower and lossier
+
+12: 50% val
+23%, 22%, 18%
+
+13: 10% val ✅
+28%, 28%, 30%, 38% (!!)
+
+14: 15% val
+32%, 30%, 26%
+
+15: 5% val
+27%, 32%, 26%
+
+
+
+=== filterbanks ===
+n_mels: 40
+window size: 25ms
+28%, 30%
+
+16: n mels 20
+19%, 13%
+
+17: n mels 80
+23%, 22%, 22%
+
+18: window size 50ms
+28%, 28%, 28%
+
+19: window size 10ms (hop 5ms)
+27%, 33%

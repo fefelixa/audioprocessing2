@@ -31,21 +31,31 @@ FS = 16000
 SECONDS = 3
 
 running = len(names) > 0
-
+random = False
 while running:
-    name = names[randint(0, len(names) - 1)]  # get a random name
-    while names_dict[name] >= TARGET and len(names) > 0:
-        names.remove(name)  # remove any completed names
-        print(f'{name} is completed')
-        try:
-            name = names[randint(0, len(names) - 1)]
-        except:
-            print('cant choose a name')
-    if len(names) == 0:
-        print('All names complete')
-        sd.wait()
-        break
-    cmd = input(f"{name} ({names_dict[name]}/{TARGET})").strip()
+    name = 'AAAAAAAA'
+    if random:
+        while names_dict[name] >= TARGET and len(names) > 0:
+            names.remove(name)  # remove any completed names
+            print(f'{name} is completed')
+            try:
+                name = names[randint(0, len(names) - 1)]
+            except IndexError:
+                print('no names left')
+            except:
+                print('something went wrong')
+        if len(names) == 0:
+            print('All names complete')
+            sd.wait()
+            break
+        cmd = input(f"{name} ({names_dict[name]}/{TARGET})").strip()
+    else:
+        while name not in names and running:
+            name = input('please enter a name: ').strip().title()
+            if name == 'Exit':
+                cmd = 'exit'
+                break
+            cmd = ''
     if cmd == "":  # enter to record, 'p' to play recording after
         # record
         sd.stop()

@@ -1,29 +1,31 @@
 import glob
 import os
+import time
 from pathlib import Path
+
+import matplotlib
 import numpy as np
-import sounddevice as sd
-import soundfile as sf
 from keras.layers import Dense, Activation, Flatten, Conv2D, InputLayer, MaxPooling2D
 from keras.models import Sequential
 from keras.optimizers import Adam
 from keras.utils import to_categorical
 from sklearn import metrics
+from sklearn.metrics import ConfusionMatrixDisplay
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
-from sklearn.metrics import ConfusionMatrixDisplay
-import matplotlib
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-import features
 MAX_FRAMES = 0
+
+
 def load_npy(directory):
     global MAX_FRAMES
     npy_files = sorted(glob.glob(directory + "/*.npy"))
     MAX_FRAMES = max([np.load(npy).shape[1] for npy in npy_files])
 
-    labels =[]
+    labels = []
     data = []
     for mfcc_file in npy_files:
         mfcc_data = np.load(mfcc_file).astype(np.float32)
@@ -41,7 +43,8 @@ def load_npy(directory):
     data = data / (scale + 1e-8)
     # Add channel dimension for Conv2D: (N, D, T, 1)
     data = data[..., np.newaxis]
-    return data,labels
+    return data, labels
+
 
 # Read class list; keep lower-case consistent
 name_file = open("NAMES.txt")
@@ -52,9 +55,7 @@ names = [name.strip().lower() for name in name_file.readlines()]
 
 # Unify the time dimension (number of frames)
 
-data,labels = load_npy('data/features/audio')
-
-
+data, labels = load_npy('data/features/audio')
 
 # --------- Label encoding ----------
 LE = LabelEncoder()
@@ -63,8 +64,9 @@ labels = to_categorical(LE.transform(labels), num_classes=len(names))
 
 # --------- Split data ----------
 X_train, X_val, y_train, y_val = train_test_split(
-    data, labels, test_size=0.2, random_state=0, stratify=labels
+    data, labels, test_size=0.2, stratify=labels
 )
+
 
 # --------- Build model ----------
 def create_model():
@@ -72,26 +74,28 @@ def create_model():
     D = data.shape[1]
     T = data.shape[2]
     model = Sequential()
-    model.add(InputLayer(input_shape=(D, T, 1)))
-    model.add(Conv2D(64, (3, 3), activation='relu')) #64 try 32
+    model.add(InputLayer(shape=(D, T, 1)))
+    model.add(Conv2D(64, (3, 3), activation='relu'))  # 64 try 32
     model.add(MaxPooling2D(pool_size=(3, 3)))
     model.add(Flatten())
-    model.add(Dense(512))  # originally 512, was overfitting
+    model.add(Dense(256))  # originally 512, was overfitting
     model.add(Activation('relu'))
     model.add(Dense(num_classes))
     model.add(Activation('softmax'))
     return model
 
+
 model = create_model()
 
-
-TEST_NUM = 4
+TEST_NUM = 16
 try:
-    graph_dir = f"graphs/test{TEST_NUM}/"
-    os.mkdir(graph_dir)
-    print(f"Directory '{graph_dir}' created successfully.")
+    if TEST_NUM != 0:
+        graph_dir = f"graphs/test{TEST_NUM}/"
+        os.mkdir(graph_dir)
+        print(f"Directory '{graph_dir}' created successfully.")
 except FileExistsError:
     print(f"Directory '{graph_dir}' already exists.")
+    input('press enter to confirm')
 except PermissionError:
     print(f"Permission denied: Unable to create '{graph_dir}'.")
 except Exception as e:
@@ -100,16 +104,19 @@ except Exception as e:
 # --------- Train / Load weights ----------
 training = True
 if training:
-    model.compile(loss='categorical_crossentropy', optimizer=Adam(learning_rate=0.01), metrics=['accuracy'])  #original 0.01
+    start_time = time.time()
+    model.compile(loss='categorical_crossentropy', optimizer=Adam(learning_rate=0.0075),
+                  metrics=['accuracy'])  # original 0.01
     model.summary()
 
-    EPOCHS = 15 # original 25 try 10
+    EPOCHS = 20  # original 25 try 10
     BATCH_SIZE = 16
     history = model.fit(
         X_train, y_train,
         validation_data=(X_val, y_val),
         epochs=EPOCHS, batch_size=BATCH_SIZE, verbose=1
     )
+    end_time = time.time()
     model.save_weights('model.weights.h5')
 
     # Training curves (plot acc/loss only)
@@ -121,7 +128,7 @@ if training:
     plt.xlabel('epoch')
     plt.legend(['train', 'validation'], loc='upper left')
     plt.tight_layout()
-    plt.savefig(f"graphs/test{TEST_NUM}/train_accuracy.png", dpi=200)
+    plt.savefig(f"graphs/test{TEST_NUM}/train_accuracy{TEST_NUM}.png", dpi=200)
     plt.close()
 
     plt.figure()
@@ -132,31 +139,32 @@ if training:
     plt.xlabel('epoch')
     plt.legend(['train', 'validation'], loc='upper left')
     plt.tight_layout()
-    plt.savefig(f"graphs/test{TEST_NUM}/train_loss.png", dpi=200)
+    plt.savefig(f"graphs/test{TEST_NUM}/train_loss{TEST_NUM}.png", dpi=200)
     plt.close()
-
+    print(f'Time: {(end_time - start_time):.2f}s')
 if not training:
     model.load_weights('model.weights.h5')
 
 # --------- Evaluation ----------
 test_data, test_labels = load_npy('test/features')
 test_labels = to_categorical(LE.transform(test_labels), num_classes=len(names))
-# _train, X_test, _val, y_test = train_test_split(test_data, test_labels, test_size=0.8, random_state=0, stratify=test_labels)
 predicted_probs = model.predict(test_data, verbose=0)
 predicted = np.argmax(predicted_probs, axis=1)
 actual = np.argmax(test_labels, axis=1)
 accuracy = metrics.accuracy_score(actual, predicted)
-print(f'Accuracy: {accuracy * 100:.2f}%')
+print(f'Accuracy: {int(accuracy * 100)}%')
 
 # Single-sample prediction example
-predicted_prob = model.predict(test_data[0:1], verbose=0)
-predicted_id = np.argmax(predicted_prob, axis=1)
-predicted_class = LE.inverse_transform(predicted_id)
-print("predicted:", predicted_class)
-actual_label = test_labels[0]
-actual_class = LE.inverse_transform([np.argmax(actual_label)])
-print('actual:', actual_class)
-
+_x, xtest, _y, ytest = train_test_split(test_data, test_labels, test_size=0.1)
+predicted_probs = model.predict(xtest, verbose=0)
+predicted_ids = np.argmax(predicted_probs, axis=1)
+predicted_class = LE.inverse_transform(predicted_ids)
+# print("predicted:", predicted_class)
+actual_class = LE.inverse_transform(np.argmax(ytest, axis=1))
+# print('actual:', actual_class)
+print('predicted actual')
+for i in range(len(predicted_class)):
+    print(predicted_class[i], actual_class[i])
 # Confusion matrix (after evaluation)
 confusion_matrix = metrics.confusion_matrix(actual, predicted, labels=range(len(names)))
 # confusion_matrix = confusion_matrix /np.max(confusion_matrix)
