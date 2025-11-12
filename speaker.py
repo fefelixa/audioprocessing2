@@ -1,11 +1,12 @@
+import numpy as np
 import sounddevice as sd
 import soundfile as sf
-import numpy as np
 
 SECONDS = 3.0
 OUT_WAV = "data/noises/noise3.wav"
 PEAK = 0.99
-FS_TARGET = 16000                    # 16khz
+FS_TARGET = 16000  # 16khz
+
 
 def main():
     sd.default.samplerate = FS_TARGET
@@ -22,11 +23,9 @@ def main():
 
     sf.write(OUT_WAV, x, FS_TARGET)
     print(f"[Save] {OUT_WAV}")
-    sd.play(x, samplerate=FS_TARGET); sd.wait()
+    sd.play(x, samplerate=FS_TARGET);
+    sd.wait()
+
 
 if __name__ == "__main__":
     main()
-
-
-
-

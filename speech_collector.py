@@ -1,8 +1,8 @@
 import os
 from random import randint
-
 import sounddevice as sd
 import soundfile as sf
+
 DIR = 'test/'
 name_file = open("NAMES.txt")
 names = [name.strip() for name in name_file.readlines()]
@@ -12,6 +12,9 @@ for n in names:
     names_dict[n] = 0
 
 TARGET = 5
+
+FS = 16000
+SECONDS = 3
 
 # count existing recordings
 for filename in os.listdir(DIR):
@@ -27,14 +30,11 @@ for k, v in names_dict.items():
     else:
         print(f"{v:>3} {k}")
 
-FS = 16000
-SECONDS = 3
-
 running = len(names) > 0
 random = False
 while running:
     name = 'AAAAAAAA'
-    if random:
+    if random:  # random arrangment of names to the target
         while names_dict[name] >= TARGET and len(names) > 0:
             names.remove(name)  # remove any completed names
             print(f'{name} is completed')
@@ -49,13 +49,13 @@ while running:
             sd.wait()
             break
         cmd = input(f"{name} ({names_dict[name]}/{TARGET})").strip()
-    else:
+    else:  # manual input of names
         while name not in names and running:
             name = input('please enter a name: ').strip().title()
-            if name == 'Exit':
+            cmd = ''
+            if name == 'Exit' or name == 'Q':
                 cmd = 'exit'
                 break
-            cmd = ''
     if cmd == "":  # enter to record, 'p' to play recording after
         # record
         sd.stop()
@@ -65,7 +65,7 @@ while running:
 
         # save recording "name123.wav"
         r_norm = 0.99 * r / max(abs(r))
-        out_name = f"{DIR}{name.lower()}{names_dict[name] + 1:03}.wav" # stored like 'name001.wav'
+        out_name = f"{DIR}{name.lower()}{names_dict[name] + 1:03}.wav"  # stored like 'name001.wav'
         sf.write(out_name, r_norm, FS)
         sd.play(r_norm, FS)
         names_dict[name] += 1

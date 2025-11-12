@@ -25,25 +25,24 @@ def load_npy(directory):
     npy_files = sorted(glob.glob(directory + "/*.npy"))
     MAX_FRAMES = max([np.load(npy).shape[1] for npy in npy_files])
 
-    labels = []
-    data = []
+    ls = []
+    d = []
     for mfcc_file in npy_files:
         mfcc_data = np.load(mfcc_file).astype(np.float32)
-        mfcc_data = np.load(mfcc_file).astype(np.float32)
         mfcc_data = np.pad(mfcc_data, ((0, 0), (0, MAX_FRAMES - mfcc_data.shape[1])))
-        data.append(mfcc_data)
+        d.append(mfcc_data)
         # Get label from parent directory name to avoid filename parsing issues
-        label = Path(mfcc_file).stem[:-3]
-        # print(label)
-        labels.append(label)
-    labels = np.array(labels)
-    data = np.array(data, dtype=np.float32)
+        l = Path(mfcc_file).stem[:-3]
+        # print(l)
+        ls.append(l)
+    ls = np.array(ls)
+    d = np.array(d, dtype=np.float32)
     # Normalize to approx [-1, 1] using global max-abs
-    scale = max(abs(float(np.min(data))), float(np.max(data)))
-    data = data / (scale + 1e-8)
+    scale = max(abs(float(np.min(d))), float(np.max(d)))
+    d = d / (scale + 1e-8)
     # Add channel dimension for Conv2D: (N, D, T, 1)
-    data = data[..., np.newaxis]
-    return data, labels
+    d = d[..., np.newaxis]
+    return d, ls
 
 
 # Read class list; keep lower-case consistent
@@ -87,7 +86,7 @@ def create_model():
 
 model = create_model()
 
-TEST_NUM = 16
+TEST_NUM = 0
 try:
     if TEST_NUM != 0:
         graph_dir = f"graphs/test{TEST_NUM}/"
@@ -102,7 +101,7 @@ except Exception as e:
     print(f"An error occurred: {e}")
 
 # --------- Train / Load weights ----------
-training = True
+training = False
 if training:
     start_time = time.time()
     model.compile(loss='categorical_crossentropy', optimizer=Adam(learning_rate=0.0075),
@@ -128,7 +127,7 @@ if training:
     plt.xlabel('epoch')
     plt.legend(['train', 'validation'], loc='upper left')
     plt.tight_layout()
-    plt.savefig(f"graphs/test{TEST_NUM}/train_accuracy{TEST_NUM}.png", dpi=200)
+    # plt.savefig(f"graphs/test{TEST_NUM}/train_accuracy{TEST_NUM}.png", dpi=200)
     plt.close()
 
     plt.figure()
@@ -139,42 +138,48 @@ if training:
     plt.xlabel('epoch')
     plt.legend(['train', 'validation'], loc='upper left')
     plt.tight_layout()
-    plt.savefig(f"graphs/test{TEST_NUM}/train_loss{TEST_NUM}.png", dpi=200)
+    # plt.savefig(f"graphs/test{TEST_NUM}/train_loss{TEST_NUM}.png", dpi=200)
     plt.close()
     print(f'Time: {(end_time - start_time):.2f}s')
 if not training:
     model.load_weights('model.weights.h5')
 
-# --------- Evaluation ----------
-test_data, test_labels = load_npy('test/features')
+# test using the test data
+test_data, test_labels = load_npy('features2')
 test_labels = to_categorical(LE.transform(test_labels), num_classes=len(names))
 predicted_probs = model.predict(test_data, verbose=0)
 predicted = np.argmax(predicted_probs, axis=1)
-actual = np.argmax(test_labels, axis=1)
+actual = LE.inverse_transform(np.argmax(test_labels, axis=1))
 accuracy = metrics.accuracy_score(actual, predicted)
+predicted_class = LE.inverse_transform([predicted])
+print('predicted | actual')
+for i in range(len(predicted_class)):
+    print(predicted_class[i], '|', actual[i])
 print(f'Accuracy: {int(accuracy * 100)}%')
 
-# Single-sample prediction example
-_x, xtest, _y, ytest = train_test_split(test_data, test_labels, test_size=0.1)
+'''
+# test using 10% (10 names) from the data and display results
+xtest, ytest = load_npy('features2')
 predicted_probs = model.predict(xtest, verbose=0)
-predicted_ids = np.argmax(predicted_probs, axis=1)
-predicted_class = LE.inverse_transform(predicted_ids)
+predicted_ids = np.argmax(predicted_probs)
+predicted_class = LE.inverse_transform([predicted_ids])
 # print("predicted:", predicted_class)
-actual_class = LE.inverse_transform(np.argmax(ytest, axis=1))
+actual_class = LE.inverse_transform([np.argmax(ytest)])
 # print('actual:', actual_class)
-print('predicted actual')
+print('predicted | actual')
 for i in range(len(predicted_class)):
-    print(predicted_class[i], actual_class[i])
+    print(predicted_class[i], '|', actual_class[i])
+
 # Confusion matrix (after evaluation)
 confusion_matrix = metrics.confusion_matrix(actual, predicted, labels=range(len(names)))
 # confusion_matrix = confusion_matrix /np.max(confusion_matrix)
 cm_display = ConfusionMatrixDisplay(confusion_matrix, display_labels=names)
 cm_display.plot(include_values=True, xticks_rotation=90)
 plt.tight_layout()
-plt.savefig(f"graphs/test{TEST_NUM}/confusion_matrix.png", dpi=200)
+# plt.savefig(f"graphs/test{TEST_NUM}/confusion_matrix.png", dpi=200)
 plt.close()
 
-'''
+
 # Quick single-audio test
 wav_path = 'data/test/test.wav'
 mfcc = features.wav_to_mfcc(wav_path)

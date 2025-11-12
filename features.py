@@ -1,11 +1,10 @@
 # features.py
 from pathlib import Path
-
 import numpy as np
 import soundfile as sf
 
-AUDIO_ROOT = Path("data/audio")
-FEAT_ROOT = Path("data/features")
+AUDIO_ROOT = Path("test2")
+FEAT_ROOT = Path("features2")
 
 
 def spectral_subtraction(s, noise_frames=6, alpha=1.5, beta=0.01):
@@ -42,7 +41,7 @@ def mag_phase(speech_frame):
     return mag, phase
 
 
-def mel_filterbank(n_fft=512, sr=16000, n_mels=20, fmin=0, fmax=None):
+def mel_filterbank(n_fft=512, sr=16000, n_mels=40, fmin=0, fmax=None):
     # Build triangular Mel filterbank matrix H (shape: n_mels × (n_fft/2+1)) (Lab 3)
     if fmax is None: fmax = sr / 2
 
